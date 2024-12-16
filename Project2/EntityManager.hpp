@@ -49,6 +49,9 @@ public:
 			removeDeadEntities(entityVec);
 		}
 	}
+	size_t getTotalEntities() const {
+		return m_totalEntities;
+	}
 
 	std::shared_ptr<Entity> addEntity(const std::string& tag) {
 
