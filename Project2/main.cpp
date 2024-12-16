@@ -3,6 +3,8 @@
 #include <SFML/Graphics.hpp>
 #include <math.h>
 #include "vec2.hpp"
+#include "Common.h"
+#include "Game.h"
 int main() {
 
 
@@ -16,6 +18,11 @@ int main() {
 	std::cout << v1.x << v1.y;
 	float distance = v1.dist(v2);
 	std::cout << distance; 
+
+
+	// Run the game 
+	Game g("config.txt");
+	g.run();
 
 	return 0;
 }

@@ -71,7 +71,7 @@ public:
     template<typename T>
     T& get()
     {
-        return std::get<t>(m_components);
+        return std::get<T>(m_components);
     }
 
     template<typename T>

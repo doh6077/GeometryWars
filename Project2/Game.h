@@ -18,6 +18,7 @@ private:
 	PlayerConfig		m_playerConfig;					//the player's properties
 	EnemyConfig			m_enemyConfig;					//the enemy's properties
 	BulletConfig		m_bulletConfig;					//the bullet's properties
+	sf::Clock           m_deltaClock; 
 	int					m_score{ 0 };
 	int					m_currentFrame{ 0 };
 	int					m_lastEnemySpawnTime{ 0 };
@@ -30,14 +31,14 @@ private:
 	std::shared_ptr<Entity> m_player;
 
 	void init(const std::string& config);			//initialize the gamestate with a config file path
-	void setPaused(bool paused);					//Pause the game
+	//void setPaused(bool paused);					//Pause the game
 
 	void sMovement();								//Systems: entity movement
 	void sUserInput();								//Systems: User Input
 	void sLifeSpan();								//Systems: lifespan of the entities
 	void sRender();									//Systems: Render
-	void sSpawner();							//Systems: Spawns enemies
-	void sCollision();								//Systems: Collision detection
+	//void sSpawner();							//Systems: Spawns enemies
+									//Systems: Collision detection
 	void sEnemySpawner();
 	void sGUI(); 
 	void spawnPlayer();
@@ -45,6 +46,7 @@ private:
 	void spawnSmallEnemies(std::shared_ptr<Entity> entity);
 	void spawnBullet(std::shared_ptr<Entity> entity, const Vec2f& target);
 	std::shared_ptr<Entity> player(); 
+	void sCollision(); 
 
 public:
 
