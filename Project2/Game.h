@@ -39,6 +39,7 @@ private:
 	void sSpawner();							//Systems: Spawns enemies
 	void sCollision();								//Systems: Collision detection
 	void sEnemySpawner();
+	void sGUI(); 
 	void spawnPlayer();
 	void spawnEnemy();
 	void spawnSmallEnemies(std::shared_ptr<Entity> entity);
