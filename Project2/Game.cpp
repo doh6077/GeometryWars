@@ -129,24 +129,22 @@ void Game::spawnSmallEnemies(std::shared_ptr<Entity> e)
 // spawns a bullet from a given entity to a target location 
 void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2f& target) {
 
-	// ToDo : implement the spawning of a bullet which travels toward target 
-	Vec2f bulletSpeed = { 300.0f, 300.0f };
-	// - buleet speed is given as a scalar speed 
-	// - you must set the velocity by using formula in notes 
-	Vec2f startPosition(entity->get<CTransform>().pos);
+	// Starting position of the bullet
+	Vec2f startPosition = entity->get<CTransform>().pos;
+
 	// Calculate the direction vector from startPosition to target
 	Vec2f direction = target - startPosition;
-	Vec2f startVelocity(-1.0f, 1.0f);   // Velocity (x, y)
-	float distance = startPosition.dist(target);
-	// Scale the normalized direction vector by bulletSpeed to calculate velocity
+
+	// Bullet speed
+	Vec2f bulletSpeed = { 2.0f, 2.0f };
 	Vec2f velocity = direction * bulletSpeed;
 
 	// Bullet appearance properties
-	sf::Color fillColor(255, 255, 255); // White
-	sf::Color outlineColor(3, 3, 9);    // Dark purple/blue
-	float outlineThickness = 3.0f;      // Outline thickness
-	int shapeSides = 50;                // Circle-like shape
-	float shapeRadius = 5.0f;           // Bullet size
+	sf::Color fillColor(8, 255, 0);
+	sf::Color outlineColor(0, 255, 100);
+	float outlineThickness = 2.0f;      // Reduced outline thickness
+	int shapeSides = 20;                // Reduced for a smaller circle-like shape
+	float shapeRadius = 5.0f;           // Smaller bullet size
 
 	// Create the bullet entity
 	auto bullet = m_entities.addEntity("bullet");
@@ -154,6 +152,7 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2f& target) {
 	// Add components to the bullet entity
 	bullet->add<CTransform>(startPosition, velocity, 0.0f); // Set velocity
 	bullet->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
+	bullet->add<CLifespan>(9); // Bullet lifespan
 }
 
 void Game::sMovement()
@@ -205,10 +204,8 @@ void Game::sLifeSpan()
 	// if it has lifespan and its time is up 
 	// destroy the entity 
 	size_t size = m_entities.getTotalEntities();
-	for (std::size_t i = 0; i < size; ++i) {
-		auto entity = m_entities.getEntities()[i];
+	for (const auto& entity : m_entities.getEntities()) {
 		if (entity->has<CLifespan>()) {
-
 			if (entity->get<CLifespan>().lifespan > 0) {
 				entity->get<CLifespan>().lifespan -= 1;
 
