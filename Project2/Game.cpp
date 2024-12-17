@@ -50,11 +50,11 @@ void Game::run()
 		m_entities.update();
 		// required update call to imgui 
 		ImGui::SFML::Update(m_window, m_deltaClock.restart());
-		sEnemySpawner();
-		sMovement();
-		sCollision();
-		sUserInput();
-		sGUI();
+		//sEnemySpawner();
+		//sMovement();
+		//sCollision();
+		//sUserInput();
+		//sGUI();
 		sRender();
 		if (m_paused) {
 			// stop the movement 
@@ -63,17 +63,17 @@ void Game::run()
 		// increment the current frame 
 		m_currentFrame++; 
 	}
-
+	ImGui::SFML::Shutdown();  // Cleanup ImGui
 
 }
 
 void Game::spawnPlayer()
 {
 	// TODO: Finish adding all properties of the player with the correct values from the config
-	Vec2f startPosition(200.0f, 200.0f);
+	Vec2f startPosition(640.0f, 360.0f);
 	Vec2f startVelocity(3.0f, 0.0f);
-	sf::Color fillColor(0, 255, 0);      // Fill color (R, G, B)
-	sf::Color outlineColor(0, 255, 0);   // Outline color (R, G, B)
+	sf::Color fillColor(0, 0, 0);      // Fill color (R, G, B)
+	sf::Color outlineColor(255, 0, 0);   // Outline color (R, G, B)
 	float outlineThickness = 3.0f;       // Outline thickness
 	int shapeSides = 8;                  // Number of sides for the shape
 	float shapeRadius = 32.0f;           // Radius of the shape
@@ -81,7 +81,7 @@ void Game::spawnPlayer()
 	// We create every entity by calling EntityManager.addEntity(tag)
 	// This returns a std::shared_ptr<Entity>, so we use 'auto' to save typing
 	auto entity = m_entities.addEntity("player");
-
+	std::cout << "Player spawned at: " << startPosition.x << ", " << startPosition.y << "\n";
 	// Add components to the entity
 	entity->add<CTransform>(startPosition, startVelocity, angle);
 	entity->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
@@ -173,7 +173,10 @@ void Game::sMovement()
 		// Optional: Handle player-specific movement using CInput
 		if (entity->tag() == "player" && entity->has<CInput>()) {
 			auto& input = entity->get<CInput>();
+			auto& transform = entity->get<CTransform>();
 
+			// Reset velocity to zero before handling input
+			transform.velocity = Vec2f(0.0f, 0.0f);
 			// Example: Update velocity based on input
 			if (input.up) {
 				entity->get<CTransform>().velocity.y = -1.0f; // Move up
@@ -261,16 +264,22 @@ void Game::sRender()
 	m_window.clear();
 
 	for (auto entity: m_entities.getEntities()) {
+
 		// set the position of the shape based on the entity's transform->pos
 		entity->get<CShape>().circle.setOrigin(entity->get<CTransform>().pos);
+		entity->get<CShape>().circle.setPosition(entity->get<CTransform>().pos);
 		// set the rotation of the shape based on the entity's transform->angle
-		entity->get<CTransform>().angle += 1.0f;
-		entity->get<CShape>().circle.setRotation(entity->get<CTransform>().angle);
+		//entity->get<CTransform>().angle += 0.01f;
+		//entity->get<CShape>().circle.setRotation(entity->get<CTransform>().angle);
 
 		// draw the entity's sf::CircleShape
 		m_window.draw(entity->get<CShape>().circle);
 
+
 	}
+	// ImGui rendering
+	ImGui::SFML::Render(m_window);
+	m_window.display();
 
 }
 
