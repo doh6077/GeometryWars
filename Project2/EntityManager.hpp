@@ -11,20 +11,13 @@ class EntityManager
 	size_t    m_totalEntities = 0;
 
 	void removeDeadEntities(EntityVec& vec) {
-
-		// TODO: remove all dead entities from the input vector 
-		// This is called by the update() function 
-		for (std::size_t i = 0; i < vec.size(); ++i) {
-			if (!vec[i]->isActive()) {
-				vec.erase(vec.begin() + i); // Erase shifts elements left
-			}
-			else {
-				++i; // Increment only if no entity was removed
-			}
-		}
-
-
+		vec.erase(
+			std::remove_if(vec.begin(), vec.end(),
+				[](const auto& entity) { return !entity->isActive(); }),
+			vec.end()
+		);
 	}
+
 public:
 	EntityManager() = default; 
 	void update() {

@@ -50,17 +50,15 @@ void Game::run()
 		m_entities.update();
 		// required update call to imgui 
 		ImGui::SFML::Update(m_window, m_deltaClock.restart());
-		//sEnemySpawner();
-		//sCollision();
-		//sGUI();
-		sUserInput();
-		sMovement();
-		sRender();
-
-		if (m_paused) {
-			// stop the movement 
-			
+		if (!m_paused)
+		{
+			sLifeSpan();
+			sEnemySpawner();
+			sMovement();
+			sCollision();
 		}
+		sUserInput();
+		sRender();
 		// increment the current frame 
 		m_currentFrame++; 
 	}
@@ -97,12 +95,12 @@ void Game::spawnEnemy()
 {
 	// Todo: make sure the enemy is spawned properly with the m_enemyConfig variables 
 	// the enemy must be spawned completely within the bounds of the window 
-	Vec2f startPosition(35.0f, 35.0f);   // Position (x, y)
+	Vec2f startPosition(200.0f, 360.0f);   // Position (x, y)
 	Vec2f startVelocity(-1.0f, 1.0f);   // Velocity (x, y)
 	sf::Color fillColor(255, 255, 255); // Fill color (white)
 	sf::Color outlineColor(3, 3, 9);    // Outline color (dark purple/blue)
-	float outlineThickness = 90.0f;     // Outline thickness
-	int shapeSides = 50;                // Number of sides (e.g., a circle-like shape)
+	float outlineThickness = 3.0f;     // Outline thickness
+	int shapeSides = 3;                // Number of sides (e.g., a circle-like shape)
 	float shapeRadius = 32.0f;          // Enemy size (use a default if not specified)
 
 	// Create the enemy entity
@@ -111,6 +109,7 @@ void Game::spawnEnemy()
 	// Add components to the enemy entity
 	enemy->add<CTransform>(startPosition, startVelocity, 0.0f); // Default angle is 0.0f
 	enemy->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
+	enemy->add<CCollision>(shapeRadius);
 	// record when the most recent enemy was spawned 
 
 	m_lastEnemySpawnTime = m_currentFrame; 
@@ -153,6 +152,7 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2f& target) {
 	bullet->add<CTransform>(startPosition, velocity, 0.0f); // Set velocity
 	bullet->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
 	bullet->add<CLifespan>(9); // Bullet lifespan
+	bullet->add<CCollision>(shapeRadius);
 }
 
 void Game::sMovement()
@@ -222,17 +222,22 @@ void Game::sCollision()
 	for (auto b : m_entities.getEntities("bullet")) {
 
 		for (auto e : m_entities.getEntities("enemy")) {
-
+			if (!e->isActive()) continue; // Skip inactive enemies
+			float distance = e->get<CTransform>().pos.dist(b->get<CTransform>().pos);
+			float collisionRadius = e->get<CCollision>().radius + b->get<CCollision>().radius;
 			// detect the collision 
-			if ((e->get<CCollision>().radius + b->get<CCollision>().radius) > e->get<CTransform>().pos.dist(b->get<CTransform>().pos)) {
+			if (distance < collisionRadius) {
 				// detect the collision 
 				std::cout << "collision has been detected\n";
+				b->destroy();
+				e->destroy(); 
+				break; 
 
 			}
 
 
 		}
-
+		// not implemented yet 
 		for (auto e : m_entities.getEntities("smallEnemy")) {
 			if ((e->get<CCollision>().radius + b->get<CCollision>().radius) > e->get<CTransform>().pos.dist(b->get<CTransform>().pos)) {
 				// detect the collision 
@@ -245,6 +250,10 @@ void Game::sCollision()
 void Game::sEnemySpawner()
 {
 	// Todo: code which implements enemy spawning should go here 
+
+	// for now, only generates one enemy
+	// will be edited
+	spawnEnemy();
 }
 
 void Game::sGUI() {
