@@ -28,25 +28,18 @@ class EntityManager
 public:
 	EntityManager() = default; 
 	void update() {
-
-
-
-		// TODO: add entities from m_entitiesToAdd the proper location(s)
-		//       - add them to the vector of all entities 
-		//       - add them to the vector inside the map, with the tag as a key 
-		for (std::size_t i = 0; i < m_entitiesToAdd.size(); ++i) {
-			m_entities.push_back(m_entitiesToAdd[i]);
-			addEntity(m_entitiesToAdd[i]->m_tag);
+		// Add entities from m_entitiesToAdd to the proper locations
+		for (const auto& entity : m_entitiesToAdd) {
+			m_entities.push_back(entity);
+			m_entityMap[entity->m_tag].push_back(entity);
 		}
-		// remove dead entities from the vector of all entities 
+		m_entitiesToAdd.clear();
+
+		// Remove dead entities
 		removeDeadEntities(m_entities);
 
-		// remove dead entities from each vector in the entity map 
 		for (auto& pair : m_entityMap) {
-			const auto& tag = pair.first;
-			auto& entityVec = pair.second;
-
-			removeDeadEntities(entityVec);
+			removeDeadEntities(pair.second);
 		}
 	}
 	size_t getTotalEntities() const {
