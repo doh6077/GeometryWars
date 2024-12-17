@@ -1,0 +1,12 @@
+*.txt
+
+# Build artifacts
+build/
+bin/
+*.o
+*.obj
+*.exe
+*.out
+*.dll
+*.so
+*.dylib
