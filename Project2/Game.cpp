@@ -51,11 +51,12 @@ void Game::run()
 		// required update call to imgui 
 		ImGui::SFML::Update(m_window, m_deltaClock.restart());
 		//sEnemySpawner();
-		//sMovement();
 		//sCollision();
-		//sUserInput();
 		//sGUI();
+		sUserInput();
+		sMovement();
 		sRender();
+
 		if (m_paused) {
 			// stop the movement 
 			
@@ -70,7 +71,7 @@ void Game::run()
 void Game::spawnPlayer()
 {
 	// TODO: Finish adding all properties of the player with the correct values from the config
-	Vec2f startPosition(640.0f, 360.0f);
+	Vec2f startPosition(500.0f, 360.0f);
 	Vec2f startVelocity(3.0f, 0.0f);
 	sf::Color fillColor(0, 0, 0);      // Fill color (R, G, B)
 	sf::Color outlineColor(255, 0, 0);   // Outline color (R, G, B)
@@ -158,43 +159,39 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2f& target) {
 void Game::sMovement()
 {
 	// Iterate through all entities in the game
-	size_t size = m_entities.getTotalEntities();
-	for (std::size_t i = 0; i < size; ++i) {
-		auto entity = m_entities.getEntities()[i];
+	for (const auto& entity : m_entities.getEntities()) {
 		// Check if the entity has a CTransform component
 		if (entity->has<CTransform>()) {
-
 			auto& transform = entity->get<CTransform>();
 
 			// Update position based on velocity
 			transform.pos += transform.velocity;
 		}
 
-		// Optional: Handle player-specific movement using CInput
+		// Handle player-specific movement using CInput
 		if (entity->tag() == "player" && entity->has<CInput>()) {
 			auto& input = entity->get<CInput>();
 			auto& transform = entity->get<CTransform>();
 
-			// Reset velocity to zero before handling input
+			// Reset velocity to zero before applying new input
 			transform.velocity = Vec2f(0.0f, 0.0f);
-			// Example: Update velocity based on input
+
+			// Apply input to velocity
 			if (input.up) {
-				entity->get<CTransform>().velocity.y = -1.0f; // Move up
+				transform.velocity.y = -3.0f; // Move up
 			}
 			if (input.down) {
-				entity->get<CTransform>().velocity.y = 1.0f;  // Move down
+				transform.velocity.y = 3.0f;  // Move down
 			}
 			if (input.left) {
-				entity->get<CTransform>().velocity.x = -1.0f; // Move left
+				transform.velocity.x = -3.0f; // Move left
 			}
 			if (input.right) {
-				entity->get<CTransform>().velocity.x = 1.0f;  // Move right
+				transform.velocity.x = 3.0f;  // Move right
 			}
 		}
-
 	}
 }
-
 
 void Game::sLifeSpan()
 {
@@ -266,7 +263,7 @@ void Game::sRender()
 	for (auto entity: m_entities.getEntities()) {
 
 		// set the position of the shape based on the entity's transform->pos
-		entity->get<CShape>().circle.setOrigin(entity->get<CTransform>().pos);
+		//entity->get<CShape>().circle.setOrigin(entity->get<CTransform>().pos);
 		entity->get<CShape>().circle.setPosition(entity->get<CTransform>().pos);
 		// set the rotation of the shape based on the entity's transform->angle
 		//entity->get<CTransform>().angle += 0.01f;
@@ -296,51 +293,69 @@ void Game::sUserInput()
 		if (event.type == sf::Event::Closed) {
 			m_running = false;
 		}
+		// Handle key press events
+		if (event.type == sf::Event::KeyPressed) {
+			switch (event.key.code) {
+			case sf::Keyboard::W:
+				std::cout << "W Key Pressed\n";
+				player()->get<CInput>().up = true;
+				break;
+			case sf::Keyboard::S:
+				std::cout << "S Key Pressed\n";
+				player()->get<CInput>().down = true;
+				break;
+			case sf::Keyboard::A:
+				std::cout << "A Key Pressed\n";
+				player()->get<CInput>().left = true;
+				break;
+			case sf::Keyboard::D:
+				std::cout << "D Key Pressed\n";
+				player()->get<CInput>().right = true;
+				break;
+			default:
+				break;
+			}
+		}
 		// Handle key release events
 		if (event.type == sf::Event::KeyReleased) {
 			switch (event.key.code) {
 			case sf::Keyboard::W:
 				std::cout << "W Key Released\n";
-				// Set player's input component "up" to false
 				player()->get<CInput>().up = false;
+				break;
+			case sf::Keyboard::S:
+				std::cout << "S Key Released\n";
+				player()->get<CInput>().down = false;
+				break;
+			case sf::Keyboard::A:
+				std::cout << "A Key Released\n";
+				player()->get<CInput>().left = false;
+				break;
+			case sf::Keyboard::D:
+				std::cout << "D Key Released\n";
+				player()->get<CInput>().right = false;
 				break;
 			default:
 				break;
 			}
+		}
 
-			// Handle key press events
-			if (event.type == sf::Event::KeyPressed) {
-				switch (event.key.code) {
-				case sf::Keyboard::W:
-					std::cout << "W Key Pressed\n";
-					// Set player's input component "up" to true
-					player()->get<CInput>().up = true;
-					break;
-				default:
-					break;
-				}
+
+
+		// Handle mouse button press events
+		if (event.type == sf::Event::MouseButtonPressed) {
+			if (ImGui::GetIO().WantCaptureMouse) {
+				continue;
 			}
 
+			if (event.mouseButton.button == sf::Mouse::Left) {
+				std::cout << "Left Mouse Button Clicked at ("
+					<< event.mouseButton.x << ", "
+					<< event.mouseButton.y << ")\n";
 
-
-			// Handle mouse button press events
-			if (event.type == sf::Event::MouseButtonPressed) {
-				// Ignore mouse events if ImGui is the thing being clicked
-				if (ImGui::GetIO().WantCaptureMouse) {
-					continue;
-				}
-
-				// Handle left mouse button click
-				if (event.mouseButton.button == sf::Mouse::Left) {
-					std::cout << "Left Mouse Button Clicked at ("
-						<< event.mouseButton.x << ", "
-						<< event.mouseButton.y << ")\n";
-
-					// Call spawnBullet here
-					Vec2f target(static_cast<float>(event.mouseButton.x),
-						static_cast<float>(event.mouseButton.y));
-					spawnBullet(player(), target);
-				}
+				Vec2f target(static_cast<float>(event.mouseButton.x),
+					static_cast<float>(event.mouseButton.y));
+				spawnBullet(player(), target);
 			}
 		}
 	}
