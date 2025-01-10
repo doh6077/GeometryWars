@@ -6,6 +6,9 @@
 #include "backends/imgui_impl_dx11.h"
 #include "imgui-SFML.h"
 
+// generate random number for the enemy position 
+#include <random>
+
 Game::Game(const std::string& config) {
 
 	init(config);
@@ -27,7 +30,8 @@ void Game::init(const std::string& path)
 	// scale the imgui ui and text size by 2 
 	ImGui::GetStyle().ScaleAllSizes(2.0f);
 	ImGui::GetIO().FontGlobalScale = 2.0f;
-
+	m_scoreText.setPosition(0, 0);
+	m_scoreText.setString(std::to_string(m_score));
 	spawnPlayer();
 
 }
@@ -87,6 +91,8 @@ void Game::spawnPlayer()
 
 	// Add an input component to the player so that we can use inputs
 	entity->add<CInput>();
+
+	
 }
 
 
@@ -95,8 +101,16 @@ void Game::spawnEnemy()
 {
 	// Todo: make sure the enemy is spawned properly with the m_enemyConfig variables 
 	// the enemy must be spawned completely within the bounds of the window 
-	Vec2f startPosition(200.0f, 360.0f);   // Position (x, y)
-	Vec2f startVelocity(-1.0f, 1.0f);   // Velocity (x, y)
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	// Define range for random position (example: x between 100-500, y between 100-400)
+	std::uniform_int_distribution<int> distX(100, 1280);  // Range for x-coordinate
+	std::uniform_int_distribution<int> distY(100, 720);  // Range for y-coordinate
+
+	// Generate random start position
+	Vec2f startPosition(distX(mt), distY(mt));
+	//Vec2f startPosition(200.0f, 360.0f);   // Position (x, y)
+	Vec2f startVelocity(0.05f, 0.0f);   // Velocity (x, y)
 	sf::Color fillColor(255, 255, 255); // Fill color (white)
 	sf::Color outlineColor(3, 3, 9);    // Outline color (dark purple/blue)
 	float outlineThickness = 3.0f;     // Outline thickness
@@ -105,11 +119,15 @@ void Game::spawnEnemy()
 
 	// Create the enemy entity
 	auto enemy = m_entities.addEntity("enemy");
-
+	
 	// Add components to the enemy entity
 	enemy->add<CTransform>(startPosition, startVelocity, 0.0f); // Default angle is 0.0f
 	enemy->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
 	enemy->add<CCollision>(shapeRadius);
+
+	// add score component to give player the score when collision happens 
+	int score = 5; 
+	enemy->add<CScore>(score);
 	// record when the most recent enemy was spawned 
 
 	m_lastEnemySpawnTime = m_currentFrame; 
@@ -123,6 +141,38 @@ void Game::spawnSmallEnemies(std::shared_ptr<Entity> e)
 	// - spawn a number of small enemies equal to the vertices of the original enemy
 	// - set each small enemy to the same color as the original, half the size
 	// - small enemies are worth double points of the original enemy
+
+	//Spawn a number of small enemies equal to the number of vertices of the original
+	size_t vertices = e->get<CShape>().circle.getPointCount() ;
+
+	// debugging 
+	std::cout << "count POint" <<vertices;
+
+	// 25.01.10 update this part to reflect the parent enemy attributes 
+	Vec2f startPosition(e->get<CTransform>().pos);
+	//Vec2f startPosition(200.0f, 360.0f);   // Position (x, y)
+	Vec2f startVelocity(e->get<CTransform>().velocity);   // Velocity (x, y)
+	sf::Color fillColor(255, 255, 255); // Fill color (white)
+	sf::Color outlineColor(3, 3, 9);    // Outline color (dark purple/blue)
+	float outlineThickness = 3.0f;     // Outline thickness
+	int shapeSides = 3;                // Number of sides (e.g., a circle-like shape)
+	float shapeRadius = e->get<CShape>().circle.getRadius() * 0.5;         // Enemy size (use a default if not specified)
+
+	for (size_t i = 0; i < vertices; ++i)
+	{
+		// Create the small enemy entity
+		auto enemy = m_entities.addEntity("smallEnemy");
+
+		// Add components to the enemy entity
+		enemy->add<CTransform>(startPosition, startVelocity, 0.0f); // Default angle is 0.0f
+		enemy->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
+		enemy->add<CCollision>(shapeRadius);
+
+		// add score component to give player the score when collision happens 
+		int score = 5 * 2;
+		enemy->add<CScore>(score);
+	}
+
 }
 
 // spawns a bullet from a given entity to a target location 
@@ -151,7 +201,7 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2f& target) {
 	// Add components to the bullet entity
 	bullet->add<CTransform>(startPosition, velocity, 0.0f); // Set velocity
 	bullet->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
-	bullet->add<CLifespan>(9); // Bullet lifespan
+	bullet->add<CLifespan>(20); // Bullet lifespan
 	bullet->add<CCollision>(shapeRadius);
 }
 
@@ -219,29 +269,95 @@ void Game::sCollision()
 {
 	// Todo: implement all proper colllisions between entities 
 	// be sure to use the collision radius, Not the spae radius 
+
+	// if there's a collision between enemy and player 
+	// Destroy the player, destroy the enemy, respawn the player 
+	for (auto e : m_entities.getEntities("enemy")) {
+
+		for (auto p : m_entities.getEntities("player")) {
+			if (!e->isActive()) continue; // Skip inactive enemies
+			float distance = e->get<CTransform>().pos.dist(p->get<CTransform>().pos);
+
+			float collisionRadius = e->get<CCollision>().radius + p->get<CCollision>().radius;
+
+			// detect a collision 
+			if (distance < collisionRadius) {
+				// when collision happens the score becomes reset 
+				m_score = 0; 
+				m_scoreText.setString(std::to_string(m_score));
+				std::cout << "Score has been updated\n";
+
+				spawnSmallEnemies(e);
+				std::cout << "collision has been detected between enemy and player\n";
+				p->destroy();
+				e->destroy();
+				break;
+				spawnPlayer();
+
+			}
+		}
+	}
+	// if there's a collision between smallEnemy and player 
+	// Destroy the player, destroy the enemy, respawn the player 
+	for (auto e : m_entities.getEntities("smallEnemy")) {
+
+		for (auto p : m_entities.getEntities("player")) {
+			if (!e->isActive()) continue; // Skip inactive enemies
+			float distance = e->get<CTransform>().pos.dist(p->get<CTransform>().pos);
+
+			float collisionRadius = e->get<CCollision>().radius + p->get<CCollision>().radius;
+
+			// detect a collision 
+			if (distance < collisionRadius) {
+				// when collision happens the score becomes reset 
+				m_score = 0;
+				m_scoreText.setString(std::to_string(m_score));
+				std::cout << "Score has been updated\n";
+
+				spawnSmallEnemies(e);
+				std::cout << "collision has been detected between enemy and player\n";
+				p->destroy();
+				e->destroy();
+				break;
+				spawnPlayer();
+
+			}
+		}
+	}
+	// if there's collision between bullet and enemy 
 	for (auto b : m_entities.getEntities("bullet")) {
 
 		for (auto e : m_entities.getEntities("enemy")) {
 			if (!e->isActive()) continue; // Skip inactive enemies
 			float distance = e->get<CTransform>().pos.dist(b->get<CTransform>().pos);
+			
 			float collisionRadius = e->get<CCollision>().radius + b->get<CCollision>().radius;
-			// detect the collision 
+			// detect a collision 
 			if (distance < collisionRadius) {
-				// detect the collision 
+				m_score += e->get<CScore>().score;
+				m_scoreText.setString(std::to_string(m_score));
+				std::cout << "Score has been updated\n";
+
+				spawnSmallEnemies(e);
 				std::cout << "collision has been detected\n";
 				b->destroy();
-				e->destroy(); 
+				e->destroy();
 				break; 
 
 			}
-
-
 		}
-		// not implemented yet 
+		// detect the collision between smallEnemy and bullet 
 		for (auto e : m_entities.getEntities("smallEnemy")) {
 			if ((e->get<CCollision>().radius + b->get<CCollision>().radius) > e->get<CTransform>().pos.dist(b->get<CTransform>().pos)) {
 				// detect the collision 
 				std::cout << "collision has been detected\n";
+
+				// update the score 
+				m_score += e->get<CScore>().score;
+				m_scoreText.setString(std::to_string(m_score));
+				std::cout << "Score has been updated\n";
+				b->destroy();
+				e->destroy();
 			}
 		}
 	}
@@ -253,7 +369,11 @@ void Game::sEnemySpawner()
 
 	// for now, only generates one enemy
 	// will be edited
-	spawnEnemy();
+	if ((m_currentFrame - m_lastEnemySpawnTime) >= 100)
+	{
+		spawnEnemy();
+	}
+	
 }
 
 void Game::sGUI() {
@@ -266,6 +386,8 @@ void Game::sRender()
 {
 	m_window.clear();
 
+
+	
 	for (auto entity: m_entities.getEntities()) {
 
 		// set the position of the shape based on the entity's transform->pos
@@ -277,10 +399,12 @@ void Game::sRender()
 
 		// draw the entity's sf::CircleShape
 		m_window.draw(entity->get<CShape>().circle);
+		
 
 
 	}
 	// ImGui rendering
+	m_window.draw(m_scoreText);
 	ImGui::SFML::Render(m_window);
 	m_window.display();
 
