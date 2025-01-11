@@ -14,25 +14,131 @@ Game::Game(const std::string& config) {
 	init(config);
 }
 
-void Game::init(const std::string& path)
-{	// Where we read the config file 
+void Game::init(const std::string& configFile) {
+
+	m_currentFrame = 0;
+	m_running = true; 
+	//Read in the config file 
+	std::fstream input;
+	input.open(configFile);
+
+	if (!input.is_open()) {
+		std::cerr << "Failed to open: " << configFile << '\n';
+		exit(-1);
+	}
+
+	std::string identifier; 
+	// Where we read the config file 
 	//Todo: read in config file here 
 	// use the premade PlayerConfig, EnemyConfig, BulletConfig variables 
 
 	//fin >> m_playerConfig.SR >> m_playerConfig.CR;
+	while (input >> identifier) {
+		if (identifier == "Window") {
 
-	// set up default window parameters 
-	m_window.create(sf::VideoMode(1280, 720), "Assignment 2");
-	m_window.setFramerateLimit(60);
+			int width;
+			input >> width;
+
+			int height;
+			input >> height;
+			int fps;
+			input >> fps;
+
+			int fullscreen;
+			input >> fullscreen;
+			// set up default window parameters 
+			m_window.create(sf::VideoMode(width, height), "Assignment 2");
+			m_window.setFramerateLimit(fps);
+
+		}
+		else if (identifier == "Player") {
+			input >> m_playerConfig.SR;
+			input >> m_playerConfig.CR;
+			sf::Vector3<sf::Uint16> color;
+
+			input >> color.x;
+			input >> color.y;
+			input >> color.z;
+
+			m_playerConfig.FR = color.x;
+			m_playerConfig.FG = color.y;
+			m_playerConfig.FB = color.z;
+
+			input >> color.x;
+			input >> color.y;
+			input >> color.z;
+
+			m_playerConfig.OR = color.x;
+			m_playerConfig.OG = color.y;
+			m_playerConfig.OB = color.z;
+			input >> m_playerConfig.OT;
+			input >> m_playerConfig.V;
+			input >> m_playerConfig.S;
+		}
+		else if (identifier == "Enemy") {
+			input >> m_enemyConfig.SR;
+			input >> m_enemyConfig.CR;
+			sf::Vector3<sf::Uint16> color;
+
+			input >> color.x;
+			input >> color.y;
+			input >> color.z;
+
+			m_enemyConfig.OR = color.x;
+			m_enemyConfig.OG = color.y;
+			m_enemyConfig.OB = color.z;
+			input >> m_enemyConfig.OT;
+			input >> m_enemyConfig.VMIN;
+			input >> m_enemyConfig.VMAX;
+			// Lifespan 
+			input >> m_enemyConfig.L;
+			// spawn Interval 
+			input >> m_enemyConfig.SI;
+			// ShapeVertices Min and Max 
+			input >> m_enemyConfig.SMIN;
+			input >> m_enemyConfig.SMAX;
+		}
+		else if (identifier == "Bullet") {
+			input >> m_bulletConfig.SR;
+			input >> m_bulletConfig.CR;
+			sf::Vector3<sf::Uint16> color;
+
+			input >> color.x;
+			input >> color.y;
+			input >> color.z;
+
+			m_bulletConfig.FR = color.x;
+			m_bulletConfig.FG = color.y;
+			m_bulletConfig.FB = color.z;
+
+			input >> color.x;
+			input >> color.y;
+			input >> color.z;
+
+			m_bulletConfig.OR = color.x;
+			m_bulletConfig.OG = color.y;
+			m_bulletConfig.OB = color.z;
+			input >> m_bulletConfig.OT;
+			input >> m_bulletConfig.V;
+			input >> m_bulletConfig.L;
+			input >> m_bulletConfig.SB;
+			input >> m_bulletConfig.S;
+		}
+		m_scoreText.setPosition(50, 50);
+		m_scoreText.setString(std::to_string(0));
+		m_scoreText.setFillColor(sf::Color::White);
+	}
+	spawnPlayer();
+	SpawnInterval = m_enemyConfig.SI; 
+
 
 	ImGui::SFML::Init(m_window);
 
 	// scale the imgui ui and text size by 2 
 	ImGui::GetStyle().ScaleAllSizes(2.0f);
 	ImGui::GetIO().FontGlobalScale = 2.0f;
-	m_scoreText.setPosition(0, 0);
-	m_scoreText.setString(std::to_string(m_score));
-	spawnPlayer();
+	//m_scoreText.setPosition(0, 0);
+	//m_scoreText.setString(std::to_string(m_score));
 
 }
 

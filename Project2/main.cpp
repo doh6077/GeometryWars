@@ -21,7 +21,7 @@ int main() {
 
 
 	// Run the game 
-	Game g("config.txt");
+	Game g("Config1.txt");
 	g.run();
 
 	return 0;
