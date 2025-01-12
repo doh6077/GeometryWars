@@ -69,20 +69,20 @@ void Game::run()
 void Game::spawnPlayer()
 {
 	// TODO: Finish adding all properties of the player with the correct values from the config
-	Vec2f startPosition(500.0f, 360.0f);
-	Vec2f startVelocity(3.0f, 0.0f);
-	sf::Color fillColor(0, 0, 0);      // Fill color (R, G, B)
-	sf::Color outlineColor(255, 0, 0);   // Outline color (R, G, B)
-	float outlineThickness = 3.0f;       // Outline thickness
-	int shapeSides = 8;                  // Number of sides for the shape
-	float shapeRadius = 32.0f;           // Radius of the shape
+	Vec2f middleOfWindow{ m_window.getSize().x / 2.0f, m_window.getSize().y / 2.0f };
+	Vec2f startVelocity(0.0f, 0.0f);
+	sf::Color fillColor(m_playerConfig.FR, m_playerConfig.FG, m_playerConfig.FB);      // Fill color (R, G, B)
+	sf::Color outlineColor(m_playerConfig.OR, m_playerConfig.OG, m_playerConfig.OB);   // Outline color (R, G, B)
+	float outlineThickness = m_playerConfig.OT;       // Outline thickness
+	int shapeSides = m_playerConfig.S;                  // Number of sides for the shape
+	float shapeRadius = m_playerConfig.SR          // Radius of the shape
 	float angle = 0.0f;                  // Initial angle
 	// We create every entity by calling EntityManager.addEntity(tag)
 	// This returns a std::shared_ptr<Entity>, so we use 'auto' to save typing
 	auto entity = m_entities.addEntity("player");
-	std::cout << "Player spawned at: " << startPosition.x << ", " << startPosition.y << "\n";
+	std::cout << "Player spawned at: " << middleOfWindow.x << ", " << middleOfWindow.y << "\n";
 	// Add components to the entity
-	entity->add<CTransform>(startPosition, startVelocity, angle);
+	entity->add<CTransform>(middleOfWindow, startVelocity, angle);
 	entity->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
 
 	// Add an input component to the player so that we can use inputs
