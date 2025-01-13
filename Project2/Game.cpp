@@ -179,21 +179,21 @@ void Game::run()
 void Game::spawnPlayer()
 {
 	// TODO: Finish adding all properties of the player with the correct values from the config
-	Vec2f startPosition(500.0f, 360.0f);
-	Vec2f startVelocity(3.0f, 0.0f);
-	sf::Color fillColor(0, 0, 0);      // Fill color (R, G, B)
-	sf::Color outlineColor(255, 0, 0);   // Outline color (R, G, B)
-	float outlineThickness = 3.0f;       // Outline thickness
-	int shapeSides = 8;                  // Number of sides for the shape
-	float shapeRadius = 32.0f;           // Radius of the shape
+	Vec2f middleOfWindow{ m_window.getSize().x / 2.0f, m_window.getSize().y / 2.0f };
+	Vec2f startVelocity(0.0f, 0.0f);
+	sf::Color fillColor(m_playerConfig.FR, m_playerConfig.FG, m_playerConfig.FB);      // Fill color (R, G, B)
+	sf::Color outlineColor(m_playerConfig.OR, m_playerConfig.OG, m_playerConfig.OB);   // Outline color (R, G, B)
+	float outlineThickness = m_playerConfig.OT;       // Outline thickness
+	int vertices = m_playerConfig.S;                  // Number of sides for the shape
+	float shapeRadius = m_playerConfig.SR          // Radius of the shape
 	float angle = 0.0f;                  // Initial angle
 	// We create every entity by calling EntityManager.addEntity(tag)
 	// This returns a std::shared_ptr<Entity>, so we use 'auto' to save typing
 	auto entity = m_entities.addEntity("player");
-	std::cout << "Player spawned at: " << startPosition.x << ", " << startPosition.y << "\n";
+	std::cout << "Player spawned at: " << middleOfWindow.x << ", " << middleOfWindow.y << "\n";
 	// Add components to the entity
-	entity->add<CTransform>(startPosition, startVelocity, angle);
-	entity->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
+	entity->add<CTransform>(middleOfWindow, startVelocity, angle);
+	entity->add<CShape>(shapeRadius, vertices, fillColor, outlineColor, outlineThickness);
 
 	// Add an input component to the player so that we can use inputs
 	entity->add<CInput>();
@@ -218,14 +218,42 @@ void Game::spawnEnemy()
 	//Vec2f startPosition(200.0f, 360.0f);   // Position (x, y)
 	Vec2f startVelocity(0.05f, 0.0f);   // Velocity (x, y)
 	sf::Color fillColor(255, 255, 255); // Fill color (white)
-	sf::Color outlineColor(3, 3, 9);    // Outline color (dark purple/blue)
-	float outlineThickness = 3.0f;     // Outline thickness
-	int shapeSides = 3;                // Number of sides (e.g., a circle-like shape)
-	float shapeRadius = 32.0f;          // Enemy size (use a default if not specified)
+	sf::Color outlineColor(m_enemyConfig.OR, m_enemyConfig.OG, m_enemyConfig.OT);    // Outline color (dark purple/blue)
+	float shapeRadius = m_enemyConfig.SR;          // Enemy size (use a default if not specified)
 
 	// Create the enemy entity
 	auto enemy = m_entities.addEntity("enemy");
 	
+
+
+	// set Vertices 
+	auto minVertices = m_enemyConfig.VMIN; 
+	auto minVertices = m_enemyConfig.VMAX;
+	// Set up the random number generator
+	std::random_device rd;  // Obtain a seed from the system
+	std::mt19937 gen(rd()); // Initialize the generator
+	std::uniform_int_distribution<> dis(minVertices, maxVertices); // Define the range
+
+	// Generate the random value
+	auto vertices = dis(gen);
+
+	// set Velocity 
+	auto minVelocity = m_enemyConfig.VMIN;
+	auto minVelocity = m_enemyConfig.VMAX;
+	std::uniform_int_distribution<> dis(minVelocity, minVelocity); // Define the range
+	auto velocity = dis(gen);
+	Vec2f startVelocity{ velocity , velocity };
+	// Set Color randomly 
+	uint8_t minColor = 0;
+	uint8_t maxColor = 255;
+	uint8_t r = minColor + (std::rand() % (1 + maxColor - minColor));
+	uint8_t g = minColor + (std::rand() % (1 + maxColor - minColor));
+	uint8_t b = minColor + (std::rand() % (1 + maxColor - minColor));
+
+	auto fillColor = sf::Color(r, g, b);
+
+
+
 	// Add components to the enemy entity
 	enemy->add<CTransform>(startPosition, startVelocity, 0.0f); // Default angle is 0.0f
 	enemy->add<CShape>(shapeRadius, shapeSides, fillColor, outlineColor, outlineThickness);
@@ -234,8 +262,13 @@ void Game::spawnEnemy()
 	// add score component to give player the score when collision happens 
 	int score = 5; 
 	enemy->add<CScore>(score);
-	// record when the most recent enemy was spawned 
+	enemy->add<CShape>(shapeRadius, vertices, fillColor, outlineColor, m_enemyConfig.OT);
+	enemy->add<CCollision>(m_enemyConfig.CR);
+	enemy->add<CLifespan>(m_enemyConfig.L);
+	enemy->add<CScore>(vertices * 100);
 
+
+	// record when the most recent enemy was spawned 
 	m_lastEnemySpawnTime = m_currentFrame; 
 }
 
